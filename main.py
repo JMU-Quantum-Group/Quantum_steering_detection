@@ -90,13 +90,16 @@ if __name__ == "__main__":
     measure_matrix_2_1 = settings_add - torch.mm(settings_transport, feature_2)
 
     measurement_result_1_0 = torch.mm(density_matrix_feature, measure_matrix_1_0)
-    measurement_result_1_1 = torch.mm(density_matrix_feature, measure_matrix_1_1)
-
     measurement_result_2_0 = torch.mm(density_matrix_feature, measure_matrix_2_0)
-    measurement_result_2_1 = torch.mm(density_matrix_feature, measure_matrix_2_1)
 
-    next_measurement_result_2_1 = 2 * measurement_result_1_0 - measurement_result_2_1
-    next_measurement_result_1_1 = 2 * measurement_result_2_0 - measurement_result_1_1
+    measurement_result_2_1 = torch.mm(density_matrix_feature, measure_matrix_2_1)
+    measurement_result_1_1 = torch.mm(density_matrix_feature, measure_matrix_1_1)
+    next_measurement_result_2_1 = measurement_result_1_0 - measurement_result_2_1
+    next_measurement_result_1_1 = measurement_result_2_0 - measurement_result_1_1
+
+    the_point = ((measurement_result_1_0 + next_measurement_result_2_1) / 2 + measurement_result_2_0 / 2) / 2
+
+
 
 
 
