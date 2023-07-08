@@ -49,10 +49,13 @@ def handle_density_matrix(density_matrix):
         result.append(item)
     return np.matrix(result)
 
+
 def generate_density_matrix_feature(density_matrix):
     return [
-        [density_matrix[0, 1], density_matrix[2, 3], density_matrix[0, 3] + density_matrix[1, 2], -(density_matrix[3, 0] + density_matrix[2, 1])],
-        [density_matrix[1, 0], density_matrix[3, 2], density_matrix[3, 0] - density_matrix[2, 1], density_matrix[0, 3] - density_matrix[1, 2]],
+        [density_matrix[0, 1], density_matrix[2, 3], density_matrix[0, 3] + density_matrix[1, 2],
+         -(density_matrix[3, 0] + density_matrix[2, 1])],
+        [density_matrix[1, 0], density_matrix[3, 2], density_matrix[3, 0] - density_matrix[2, 1],
+         density_matrix[0, 3] - density_matrix[1, 2]],
         [(density_matrix[0, 0] - density_matrix[1, 1]) / 2, (density_matrix[2, 2] - density_matrix[3, 3]) / 2,
          density_matrix[0, 2] - density_matrix[1, 3], - density_matrix[2, 0] + density_matrix[3, 1]]
     ]
@@ -71,16 +74,21 @@ if __name__ == "__main__":
     density_matrix_feature = generate_density_matrix_feature(rho)
     density_matrix_feature = torch.tensor(density_matrix_feature).double().to(device)
 
-    phi_1 = torch.zeros(1, requires_grad=True)
-    psi_1 = torch.zeros(1, requires_grad=True)
+    phi_1 = torch.zeros(1, requires_grad=True).to(device)
+    psi_1 = torch.zeros(1, requires_grad=True).to(device)
 
-    phi_2 = torch.zeros(1, requires_grad=True)
-    psi_2 = torch.zeros(1, requires_grad=True)
+    phi_2 = torch.zeros(1, requires_grad=True).to(device)
+    psi_2 = torch.zeros(1, requires_grad=True).to(device)
 
-    feature_1 = torch.stack((torch.cos(phi_1) * torch.cos(psi_1), torch.cos(phi_1) * torch.sin(psi_1), torch.sin(phi_1))).double()
-    feature_2 = torch.stack((torch.sin(phi_2) * torch.cos(psi_2), torch.sin(phi_2) * torch.sin(psi_2), torch.cos(phi_2))).double()
+    feature_1 = torch.stack(
+        (torch.cos(phi_1) * torch.cos(psi_1), torch.cos(phi_1) * torch.sin(psi_1), torch.sin(phi_1))).double().to(
+        device)
+    feature_2 = torch.stack(
+        (torch.sin(phi_2) * torch.cos(psi_2), torch.sin(phi_2) * torch.sin(psi_2), torch.cos(phi_2))).double().to(
+        device)
 
-    settings_transport = torch.tensor([[0.0, 0.0, 1.0], [0.0, 0.0, -1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]).double().to(device)
+    settings_transport = torch.tensor(
+        [[0.0, 0.0, 1.0], [0.0, 0.0, -1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]).double().to(device)
     settings_add = torch.transpose(torch.tensor([[1.0, 1.0, 0.0, 0.0]]).double().to(device), 0, 1)
 
     measure_matrix_1_0 = settings_add + torch.mm(settings_transport, feature_1)
@@ -98,9 +106,3 @@ if __name__ == "__main__":
     next_measurement_result_1_1 = measurement_result_2_0 - measurement_result_1_1
 
     the_point = ((measurement_result_1_0 + next_measurement_result_2_1) / 2 + measurement_result_2_0 / 2) / 2
-
-
-
-
-
-
