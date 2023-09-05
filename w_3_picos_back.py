@@ -68,16 +68,27 @@ def f_1(X_list, n_points):
     prob.add_constraint(p <= 1)
     prob.add_constraint(pic.trace(rho_next) <= 1)
     prob.set_objective("max", p)
-    # print(prob)
-    # prob.maximize = p
     prob.solve(solver="cvxopt", primals=True)
+
+    print_rho_next = np.zeros((8, 8))
+    for index_1 in range(3):
+        for index_2 in range(n_points):
+            current_rho = rho_list[index_1][index_2]
+            current_rho = (current_rho - min(np.linalg.eigvals(current_rho)) * np.eye(4)) if min(np.linalg.eigvals(current_rho)) < 0 else current_rho
+            if min(np.linalg.eigvals(current_rho)) < 0:
+                print("ERROR")
+            if index_1 == 0:
+                print_rho_next += np.kron(current_rho, X_list[index_1][index_2])
+            elif index_1 == 1:
+                print_rho_next += exchange * (np.kron(current_rho, X_list[index_1][index_2])) * exchange
+            else:
+                print_rho_next += np.kron(X_list[index_1][index_2], current_rho)
+
+    print(print_rho_next)
+    print("rho - print_rho_next", (p.value * rho + ((1 - p.value) / 8) * np.eye(8)) - print_rho_next)
 
     print(rho_next)
     print([np.linalg.eigvals(current_rho) for current_rho in rho_list[0]])
-    # for current_rho in rho_list[0]:
-    #     print(current_rho)
-    # for current_rho in rho_list[1]:
-    #     print(current_rho)
     print(np.linalg.eigvals(rho_next))
     print(p.value * rho + ((1 - p.value) / 8) * np.eye(8))
     print(rho_next - (p.value * rho + ((1 - p.value) / 8) * np.eye(8)))
@@ -129,20 +140,25 @@ def f_2(X_list, n_points):
     # prob.maximize = p
     prob.solve(solver="cvxopt",primals=True)
 
-    print(rho_next)
-    # print([np.linalg.eigvals(current_rho) for current_rho in rho_list[0]])
-    print(np.linalg.eigvals(rho_next))
-
     print_rho_next = np.zeros((8, 8))
     for index_1 in range(3):
         for index_2 in range(n_points):
+            current_rho = rho_list[index_1][index_2]
+            current_rho = (current_rho - min(np.linalg.eigvals(current_rho)) * np.eye(4)) if min(np.linalg.eigvals(current_rho)) < 0 else current_rho
+            if min(np.linalg.eigvals(current_rho)) < 0:
+                print("ERROR")
             if index_1 == 0:
-                print_rho_next += np.kron(rho_list[index_1][index_2], X_list[index_1][index_2])
+                print_rho_next += np.kron(current_rho, X_list[index_1][index_2])
             elif index_1 == 1:
-                print_rho_next += exchange * (np.kron(rho_list[index_1][index_2], X_list[index_1][index_2])) * exchange
+                print_rho_next += exchange * (np.kron(current_rho, X_list[index_1][index_2])) * exchange
             else:
-                print_rho_next += np.kron(X_list[index_1][index_2], rho_list[index_1][index_2])
+                print_rho_next += np.kron(X_list[index_1][index_2], current_rho)
+
+    print(rho_next)
+    # print([np.linalg.eigvals(current_rho) for current_rho in rho_list[0]])
+    print(np.linalg.eigvals(rho_next))
     print(print_rho_next)
+    print("rho - print_rho_next", (p.value * rho + ((1 - p.value) / 8) * np.eye(8)) - print_rho_next)
     print(p.value * rho + ((1 - p.value) / 8) * np.eye(8))
     print(rho_next - (p.value * rho + ((1 - p.value) / 8) * np.eye(8)))
     print(np.linalg.eigvals(rho_next - (p * rho + ((1 - p) / 8) * np.eye(8))))
