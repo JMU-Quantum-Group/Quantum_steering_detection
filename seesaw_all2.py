@@ -45,10 +45,6 @@ exchange_2 = torch.tensor(exchange_2)
 
 I_matrix = torch.eye(16) / 16
 
-L = torch.tril(torch.randn(16, 16), diagonal=-1)
-L = L + torch.diag(torch.exp(torch.randn(16)))
-L.requires_grad_(True)
-
 for i in range(n_points):
     L_1 = torch.tril(torch.randn(n, n), diagonal=-1)
     L_1 = L_1 + torch.diag(torch.exp(torch.randn(n)))
@@ -63,14 +59,9 @@ for i in range(n_points):
 weights = torch.randn(n_points)
 opti_list = L_1_list + L_2_list
 opti_list.append(weights)
-optimizer = torch.optim.SGD(opti_list, lr=0.0001)
+optimizer = torch.optim.SGD(opti_list, lr=0.001)
 
-optimizer_2 = torch.optim.SGD([L], lr=0.0001)
-
-def train(train_optimizer, epoch, second_epoch):
-    P = L @ L.t()
-    Rho = P / P.trace()
-
+for epoch in range(30000):
     # 计算半正定矩阵
     L_1 = L_1_list[0] @ L_1_list[0].t()
     L_2 = L_2_list[0] @ L_2_list[0].t()
@@ -85,30 +76,20 @@ def train(train_optimizer, epoch, second_epoch):
         L_2 = L_2_list[j] @ L_2_list[j].t()
         L_1 = L_1 / L_1.trace()
         L_2 = L_2 / L_2.trace()
+        # target = torch.cat((target, (torch.flatten(torch.kron(L_1, L_2))).unsqueeze(0)), dim=0)
         if j % 3 == 0:
             target = torch.cat((target, (torch.flatten(torch.kron(L_1, L_2))).unsqueeze(0)), dim=0)
         elif j % 3 == 1:
-            target = torch.cat(
-                (target, (torch.flatten(exchange_1 * torch.kron(L_1, L_2) * exchange_1)).unsqueeze(0)), dim=0)
+            target = torch.cat((target, (torch.flatten(exchange_1 * torch.kron(L_1, L_2) * exchange_1)).unsqueeze(0)), dim=0)
         else:
-            target = torch.cat(
-                (target, (torch.flatten(exchange_2 * torch.kron(L_1, L_2) * exchange_2)).unsqueeze(0)), dim=0)
+            target = torch.cat((target, (torch.flatten(exchange_2 * torch.kron(L_1, L_2) * exchange_2)).unsqueeze(0)), dim=0)
 
     target_matrix = torch.matmul(weights_normalized, target)
-    loss = -((torch.flatten(Rho) - target_matrix).pow(2).sum().sqrt())
+    loss = -((torch.flatten(I_matrix) - target_matrix).pow(2).sum().sqrt())
 
-    train_optimizer.zero_grad()
+    optimizer.zero_grad()
     loss.backward()
-    train_optimizer.step()
+    optimizer.step()
 
-    print(f'Epoch {epoch}: {second_epoch} Loss = {loss.item()}')
-
-for epoch in range(20):
-    P = L @ L.t()
-    Rho = P / P.trace()
-    for epoch1 in range(1000):
-        train(optimizer, epoch, epoch1)
-
-    for epoch2 in range(1000):
-        train(optimizer_2, epoch, epoch2)
+    print(f'Epoch {epoch}: Loss = {loss.item()}')
 
