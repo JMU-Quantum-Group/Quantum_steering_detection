@@ -12,7 +12,7 @@ def bubble_sort_steps(nums):
         for j in range(len(nums) - 1):
             if nums[j] > nums[j + 1]:
                 nums[j], nums[j + 1] = nums[j + 1], nums[j]
-                steps.append((j, j + 1))
+                steps.append([j, j + 1])
     return steps
 
 
@@ -72,13 +72,25 @@ class ML_PIC(object):
         for epoch in range(epoch):
             weights_normalized = F.normalize(torch.abs(weights), p=1, dim=0)
             target = torch.zeros(2 ** self.N, 2 ** self.N, dtype=torch.complex128)
-            # L_1_torch_list = list()
 
             for j in range(self.n_points):
 
                 for i in range(len(self.partition_list)):
                     current_L = L_list[j][i]
 
+                    L_0 = torch.matmul(current_L[0], current_L[0].conj().t())
+                    L_0 = L_0 / L_0.trace()
+                    L_1 = torch.matmul(current_L[1], current_L[1].conj().t())
+                    L_1 = L_1 / L_1.trace()
+
+                    current_target = torch.kron(L_0, L_1)
+                    for L_index in range(2, len(current_L)):
+                        L = torch.matmul(current_L[L_index], current_L[L_index].conj().t())
+                        L = L / L.trace()
+                        current_target = torch.kron(current_target, L)
+
+                    for exchange_pair in self.exchange_list[i]:
+                        current_target = torch.matmul(torch.matmul(self.exchange_matrix[exchange_pair[0]][exchange_pair[1]], current_target),self.exchange_matrix[exchange_pair[0]][exchange_pair[1]])
 
 
                 L_1 = torch.matmul(L_1_list[j], L_1_list[j].conj().t())
