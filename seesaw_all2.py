@@ -23,7 +23,7 @@ exchange_1 = [[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
               [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
               [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
               [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]]
-exchange_1 = torch.tensor(exchange_1)
+exchange_1 = torch.tensor(exchange_1).to('cuda:0')
 
 exchange_2 = [[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
               [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -41,35 +41,35 @@ exchange_2 = [[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
               [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
               [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
               [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]]
-exchange_2 = torch.tensor(exchange_2)
+exchange_2 = torch.tensor(exchange_2).to('cuda:0')
 
 I_matrix = torch.eye(16) / 16
 
 for i in range(n_points):
-    L_1 = torch.tril(torch.randn(n, n), diagonal=-1)
-    L_1 = L_1 + torch.diag(torch.exp(torch.randn(n)))
+    L_1 = torch.tril(torch.randn(n, n), diagonal=-1).to('cuda:0')
+    L_1 = L_1 + torch.diag(torch.exp(torch.randn(n))).to('cuda:0')
     L_1.requires_grad_(True)
     L_1_list.append(L_1)
 
-    L_2 = torch.tril(torch.randn(n, n), diagonal=-1)
-    L_2 = L_2 + torch.diag(torch.exp(torch.randn(n)))
+    L_2 = torch.tril(torch.randn(n, n), diagonal=-1).to('cuda:0')
+    L_2 = L_2 + torch.diag(torch.exp(torch.randn(n))).to('cuda:0')
     L_2.requires_grad_(True)
     L_2_list.append(L_2)
 
-weights = torch.randn(n_points)
+weights = torch.randn(n_points).to('cuda:0')
 opti_list = L_1_list + L_2_list
 opti_list.append(weights)
 optimizer = torch.optim.SGD(opti_list, lr=0.001)
 
-for epoch in range(30000):
+for epoch in range(300000):
     # 计算半正定矩阵
     L_1 = L_1_list[0] @ L_1_list[0].t()
     L_2 = L_2_list[0] @ L_2_list[0].t()
     L_1 = L_1 / L_1.trace()
     L_2 = L_2 / L_2.trace()
 
-    target = (torch.flatten(torch.kron(L_1, L_2))).unsqueeze(0)
-    weights_normalized = F.normalize(torch.abs(weights), p=1, dim=0)
+    target = (torch.flatten(torch.kron(L_1, L_2))).unsqueeze(0).to('cuda:0')
+    weights_normalized = F.normalize(torch.abs(weights), p=1, dim=0).to('cuda:0')
 
     for j in range(1, n_points):
         L_1 = L_1_list[j] @ L_1_list[j].t()
@@ -78,14 +78,14 @@ for epoch in range(30000):
         L_2 = L_2 / L_2.trace()
         # target = torch.cat((target, (torch.flatten(torch.kron(L_1, L_2))).unsqueeze(0)), dim=0)
         if j % 3 == 0:
-            target = torch.cat((target, (torch.flatten(torch.kron(L_1, L_2))).unsqueeze(0)), dim=0)
+            target = torch.cat((target, (torch.flatten(torch.kron(L_1, L_2).to('cuda:0'))).unsqueeze(0)), dim=0)
         elif j % 3 == 1:
-            target = torch.cat((target, (torch.flatten(exchange_1 * torch.kron(L_1, L_2) * exchange_1)).unsqueeze(0)), dim=0)
+            target = torch.cat((target, (torch.flatten(exchange_1 * torch.kron(L_1, L_2).to('cuda:0') * exchange_1)).unsqueeze(0)), dim=0)
         else:
-            target = torch.cat((target, (torch.flatten(exchange_2 * torch.kron(L_1, L_2) * exchange_2)).unsqueeze(0)), dim=0)
+            target = torch.cat((target, (torch.flatten(exchange_2 * torch.kron(L_1, L_2).to('cuda:0') * exchange_2)).unsqueeze(0)), dim=0)
 
     target_matrix = torch.matmul(weights_normalized, target)
-    loss = -((torch.flatten(I_matrix) - target_matrix).pow(2).sum().sqrt())
+    loss = -((torch.flatten(I_matrix).to('cuda:0') - target_matrix).pow(2).sum().sqrt())
 
     optimizer.zero_grad()
     loss.backward()
