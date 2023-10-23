@@ -51,9 +51,11 @@ class ML_PIC(object):
             self.exchange_matrix_np.append(temp_matrix_list_np)
 
         self.exchange_list = list()
+        self.partition_max_part_list = list() # todo
         for partition in self.partition_list:
             concatenated_list = [element for sublist in partition.partition_by_list for element in sublist]
             self.exchange_list.append(bubble_sort_steps(concatenated_list))
+
 
     def train(self, epoch):
         weights = torch.randn(self.n_points * len(self.partition_list))
@@ -118,12 +120,13 @@ class ML_PIC(object):
                 print(
                     f'Epoch {epoch} scalar: Scalar = {scalar.item()}, Scalar Loss = {target_loss.item()}, Distance Loss = {distance_loss.item()}')
 
-            result = [[], [], []]
+            result = list()
             weights_result = weights_normalized.detach().numpy()
             for j in range(self.n_points):
+                temp_point_list = list()
                 for i in range(len(self.partition_list)):
                     t = weights_normalized[j * len(self.partition_list) + i]
-                    pass
+                    current_L = list()
 
             # for j in range(self.n_points):
             #     result[j % 3].append(L_1_torch_list[j].detach().numpy() * weights_result[j])
@@ -139,13 +142,13 @@ class ML_PIC(object):
 
         for i in range(self.n_points):
             for j in range(len(self.partition_list)):
-                sdp_rho = pic.HermitianVariable('rho_' + str(j) + '_' + str(i), 4)
+                sdp_rho = pic.HermitianVariable('rho_' + str(i) + '_' + str(j), 4)
                 rho_list[i].append(sdp_rho)
                 prob.add_constraint(sdp_rho >> 0)
 
         rho_next = X_list[0][0] @ rho_list[0][0]
-        for index_1 in range(3):
-            for index_2 in range(self.n_points):
+        for index_1 in range(self.n_points):
+            for index_2 in range(len(self.partition_list)):
                 if index_1 == 0 and index_2 == 0:
                     continue
                 if index_1 == 0:
