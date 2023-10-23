@@ -48,7 +48,8 @@ class ML_PIC(object):
 
         self.exchange_list = list()
         for partition in self.partition_list:
-            pass
+            concatenated_list = [element for sublist in partition.partition_by_list for element in sublist]
+            self.exchange_list.append(bubble_sort_steps(concatenated_list))
 
     def train(self, epoch):
         weights = torch.randn(self.n_points)
@@ -74,7 +75,11 @@ class ML_PIC(object):
             # L_1_torch_list = list()
 
             for j in range(self.n_points):
-                # for L
+
+                for i in range(len(self.partition_list)):
+                    current_L = L_list[j][i]
+
+
 
                 L_1 = torch.matmul(L_1_list[j], L_1_list[j].conj().t())
                 L_2 = torch.matmul(L_2_list[j], L_2_list[j].conj().t())
@@ -169,5 +174,6 @@ if __name__ == "__main__":
             rho[index, index2] = 0.25
 
     partition_2_prod = generate_k_producible_partitions(5, 2)
-    current_class = ML_PIC(5, 1000, rho, partition_2_prod, 1)
+    # print(bubble_sort_steps([element for sublist in partition_2_prod[0].partition_by_list for element in sublist]))
+    current_class = ML_PIC(5, 100, rho, partition_2_prod, 1)
     current_class.train(1000)
