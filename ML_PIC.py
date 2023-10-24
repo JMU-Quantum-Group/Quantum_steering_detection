@@ -51,11 +51,16 @@ class ML_PIC(object):
             self.exchange_matrix_np.append(temp_matrix_list_np)
 
         self.exchange_list = list()
-        self.partition_max_part_list = list() # todo
+        self.partition_max_part_list = list()
         for partition in self.partition_list:
             concatenated_list = [element for sublist in partition.partition_by_list for element in sublist]
             self.exchange_list.append(bubble_sort_steps(concatenated_list))
-
+            info = dict()
+            info['len'] = partition.producible
+            for index in range(len(partition.partition_by_list)):
+                if len(partition.partition_by_list[index]) == partition.producible:
+                    info['part'] = partition.partition_by_list[index]
+                    info['index'] = index
 
     def train(self, epoch):
         weights = torch.randn(self.n_points * len(self.partition_list))
